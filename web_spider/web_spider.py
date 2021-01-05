@@ -1,6 +1,7 @@
 import urllib.request as req
 import json
 from urllib.parse import urlparse, parse_qs, urlunparse
+from bs4 import BeautifulSoup
 
 class WebSpider:
     def __init__(self):
@@ -8,14 +9,17 @@ class WebSpider:
 
     def helper(self):
         print("Please input grep Option: ")
-        print("1 - grep NBA Score")
-        print("2 - grep PTT NBA Content")
+        print("NBA - grep NBA Score")
+        print("PTT {Board} - grep PTT Board Content")
 
-    def grep(self, option):
-        if option == '1':
-            return self.grepScore()
+    def grep(self, option, extraInfo = []):
+        if option == 'NBA':
+            return self.grepNBA()
+        elif option == 'PTT':
+            return self.grepPTT(extraInfo)
 
-    def grepScore(self):
+
+    def grepNBA(self):
         url = 'https://tw.global.nba.com/stats2/scores/gamedaystatus.json?locale=zh_TW'
         data = json.loads(self.urlRequest(url))
         gameDates = data['payload']['gameDates']
@@ -47,6 +51,28 @@ class WebSpider:
                     'awayTeam': awayTeam,
                     'awayScore': awayScore,
                     'status': statusDesc,
+                })
+        return ret
+
+    def grepPTT(self, extraInfo = []):
+        ret = []
+        board = ''
+        if (len(extraInfo) < 1):
+            return ret
+        else:
+            board = extraInfo[0]
+        url = 'https://www.ptt.cc/bbs/'+board+'/index.html'
+        data = self.urlRequest(url)
+        data = BeautifulSoup(data, 'html.parser')
+
+        titleList = []
+        titles = data.select('div.title a')
+        for title in titles:
+            if title.text not in titleList:
+                titleList.append(title.text)
+                ret.append({
+                    'title': title.text,
+                    'href': 'https://www.ptt.cc/'+title['href']
                 })
         return ret
 
