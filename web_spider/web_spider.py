@@ -1,4 +1,4 @@
-import urllib.request as req
+import requests as req
 import json
 from urllib.parse import urlparse, parse_qs, urlunparse
 from bs4 import BeautifulSoup
@@ -6,6 +6,22 @@ from bs4 import BeautifulSoup
 class WebSpider:
     def __init__(self):
         pass
+
+    def urlRequest(self, url):
+        # add headers to prevent 403
+        # add cookies for enter the board which has age verification
+        request = req.get(
+            url = url,
+            cookies = {'over18': '1'},
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36'}
+        )
+
+        if 200 != request.status_code:
+            raise IOError
+        else:
+            request.encoding = 'utf8'
+
+        return request.text
 
     def helper(self):
         print("Please input grep Option: ")
@@ -18,6 +34,12 @@ class WebSpider:
         elif option == 'PTT':
             return self.grepPTT(extraInfo)
 
+    def formatter(self, string):
+        count = 0
+        for char in string:
+            if 127 < ord(char):
+                count += 1
+        return count
 
     def grepNBA(self):
         url = 'https://tw.global.nba.com/stats2/scores/gamedaystatus.json?locale=zh_TW'
@@ -56,32 +78,34 @@ class WebSpider:
 
     def grepPTT(self, extraInfo = []):
         ret = []
+        prefix = 'https://www.ptt.cc'
         board = ''
         if (len(extraInfo) < 1):
             return ret
         else:
             board = extraInfo[0]
-        url = 'https://www.ptt.cc/bbs/'+board+'/index.html'
-        data = self.urlRequest(url)
-        data = BeautifulSoup(data, 'html.parser')
 
-        titleList = []
-        titles = data.select('div.title a')
-        for title in titles:
-            if title.text not in titleList:
-                titleList.append(title.text)
+        try:
+            url = prefix + '/bbs/' + board + '/index.html'
+            data = self.urlRequest(url)
+            data = BeautifulSoup(data, 'html.parser')
+            titles = data.select('div.title a')
+            for title in titles:
                 ret.append({
                     'title': title.text,
-                    'href': 'https://www.ptt.cc/'+title['href']
+                    'href': prefix+title['href']
                 })
+        except:
+            url = prefix + '/bbs/index.html'
+            data = self.urlRequest(url)
+            data = BeautifulSoup(data, 'html.parser')
+
+            boardNames = data.select('div.b-ent a div.board-name')
+            boardClasses = data.select('div.b-ent a div.board-class')
+            for boardName, boardClass in zip(boardNames, boardClasses):
+                ret.append({
+                    'title': boardClass.text,
+                    'boardName': boardName.text
+                })
+
         return ret
-
-    def urlRequest(self, url):
-        # add headers to prevent 403
-        request = req.Request(url, headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36'
-        })
-        with req.urlopen(request) as response:
-            data = response.read().decode('utf-8')
-
-        return data
