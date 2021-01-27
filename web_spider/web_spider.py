@@ -96,16 +96,6 @@ class WebSpider:
                     'href': prefix+title['href']
                 })
         except:
-            url = prefix + '/bbs/index.html'
-            data = self.urlRequest(url)
-            data = BeautifulSoup(data, 'html.parser')
-
-            boardNames = data.select('div.b-ent a div.board-name')
-            boardClasses = data.select('div.b-ent a div.board-class')
-            for boardName, boardClass in zip(boardNames, boardClasses):
-                ret.append({
-                    'title': boardClass.text,
-                    'boardName': boardName.text
-                })
+            ret = []
 
         return ret

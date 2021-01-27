@@ -68,53 +68,7 @@ def broadcast(event):
             ret = 'No Game Today.'
 
     elif 'PTT' == text:
-        boards = getBoards().getBoards()
-
-        count = 0
-        contents = []
-        bubbleContent = []
-        rowBowContent = []
-        for className, classBoards in boards.items():
-            for board in classBoards:
-                rowBowContent.append({
-                    'type': 'button',
-                    'action': {
-                        'type': 'message',
-                        'label': board,
-                        'text': f'PTT {board}'
-                    }
-                })
-
-                count += 1
-
-                if 0 == count % 2:
-                    bubbleContent.append({
-                        'type': 'box',
-                        'layout': 'horizontal',
-                        'contents': rowBowContent
-                    })
-
-                    rowBowContent = []
-            
-                if count >= 20:
-                    contents.append({
-                        'type': 'bubble',
-                        'body': {
-                            'type': 'box',
-                            'layout': 'vertical',
-                            'contents': bubbleContent
-                        }
-                    })
-                    bubbleContent = []
-                    count = 0
-
-        sendMessage = FlexSendMessage(
-            alt_text='Theme',
-            contents={
-                'type': 'carousel',
-                'contents': contents
-            }
-        )
+        sendMessage = listAllBoards()
 
     elif [] != pttMatch:
         spider = WebSpider()
@@ -125,7 +79,7 @@ def broadcast(event):
             ret += "\n"
 
         if ret == '':
-            ret = 'No Article.'
+            ret = 'No Article. Please Type "PTT" and select a correct board'
 
     else:
         ret = text
@@ -137,6 +91,56 @@ def broadcast(event):
         event.reply_token,
         sendMessage
     )
+
+def listAllBoards():
+    boards = getBoards().getBoards()
+
+    count = 0
+    contents = []
+    bubbleContent = []
+    rowBowContent = []
+    for className, classBoards in boards.items():
+        for board in classBoards:
+            rowBowContent.append({
+                'type': 'button',
+                'action': {
+                    'type': 'message',
+                    'label': board,
+                    'text': f'PTT {board}'
+                }
+            })
+
+            count += 1
+
+            if 0 == count % 2:
+                bubbleContent.append({
+                    'type': 'box',
+                    'layout': 'horizontal',
+                    'contents': rowBowContent
+                })
+
+                rowBowContent = []
+
+            if count >= 20:
+                contents.append({
+                    'type': 'bubble',
+                    'body': {
+                        'type': 'box',
+                        'layout': 'vertical',
+                        'contents': bubbleContent
+                    }
+                })
+                bubbleContent = []
+                count = 0
+    
+    return FlexSendMessage(
+        alt_text='Theme',
+        contents={
+            'type': 'carousel',
+            'contents': contents
+        }
+    )
+
 
 if __name__ == "__main__":
     app.run()
